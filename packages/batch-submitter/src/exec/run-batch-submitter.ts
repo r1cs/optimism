@@ -111,6 +111,7 @@ const requiredEnvVars: RequiredEnvVars = {
  * PROPOSER_MNEMONIC
  * SEQUENCER_HD_PATH
  * PROPOSER_HD_PATH
+ * RUN_METRICS_SERVER
  */
 const env = process.env
 const FRAUD_SUBMISSION_ADDRESS = env.FRAUD_SUBMISSION_ADDRESS || 'no fraud'
@@ -119,6 +120,7 @@ const MIN_GAS_PRICE_IN_GWEI = parseInt(env.MIN_GAS_PRICE_IN_GWEI, 10) || 0
 const MAX_GAS_PRICE_IN_GWEI = parseInt(env.MAX_GAS_PRICE_IN_GWEI, 10) || 70
 const GAS_RETRY_INCREMENT = parseInt(env.GAS_RETRY_INCREMENT, 10) || 5
 const GAS_THRESHOLD_IN_GWEI = parseInt(env.GAS_THRESHOLD_IN_GWEI, 10) || 100
+const RUN_METRICS_SERVER = env.RUN_METRICS_SERVER || 'true'
 
 // Private keys & mnemonics
 const SEQUENCER_PRIVATE_KEY = env.SEQUENCER_PRIVATE_KEY
@@ -307,9 +309,11 @@ export const run = async () => {
     loop(() => stateBatchSubmitter.submitNextBatch())
   }
 
-  // Initialize metrics server
-  const metricsServer = createMetricsServer({
-    logger,
-    registry: metrics.registry,
-  })
+  if (RUN_METRICS_SERVER === 'true') {
+    // Initialize metrics server
+    const metricsServer = createMetricsServer({
+      logger,
+      registry: metrics.registry,
+    })
+  }
 }
