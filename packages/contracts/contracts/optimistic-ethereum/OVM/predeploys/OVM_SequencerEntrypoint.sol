@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.5.0 <0.8.0;
 pragma experimental ABIEncoderV2;
+import "hardhat/console.sol";
+
 
 /* Library Imports */
 import { Lib_EIP155Tx } from "../../libraries/codec/Lib_EIP155Tx.sol";
@@ -44,14 +46,20 @@ contract OVM_SequencerEntrypoint {
             encodedTx,
             Lib_ExecutionManagerWrapper.ovmCHAINID()
         );
+        //debug
+        console.log("lxd test: SequencerEntrypoint is touched");
 
         // Value is computed on the fly. Keep it in the stack to save some gas.
         address target = transaction.sender();
+        //debug
+        console.log("lxd test SequencerEntrypoint: target is %s",target);
 
         bool isEmptyContract;
         assembly {
             isEmptyContract := iszero(extcodesize(target))
         }
+        //debug
+        console.log("lxd test SequencerEntrypoint: isEmptyContract: %s",isEmptyContract);
 
         // If the account is empty, deploy the default EOA to that address.
         if (isEmptyContract) {
@@ -62,11 +70,19 @@ contract OVM_SequencerEntrypoint {
                 transaction.s
             );
         }
+        //debug
+        console.log("lxd test SequencerEntrypoint: transaction to %s,value %s",transaction.to,transaction.value);
+        console.log("lxd test SequencerEntrypoint: transaction data follow");
+        console.logBytes(transaction.data);
 
         // Forward the transaction over to the EOA.
         (bool success, bytes memory returndata) = target.call(
             abi.encodeWithSelector(iOVM_ECDSAContractAccount.execute.selector, transaction)
         );
+        //debug
+        console.log("lxd test SequencerEntrypoint: success: %s",success);
+        console.log("lxd test SequencerEntrypoint: returndata follow");
+        console.logBytes(returndata);
 
         if (success) {
             assembly {
