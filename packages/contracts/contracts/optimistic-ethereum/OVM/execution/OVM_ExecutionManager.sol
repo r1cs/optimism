@@ -547,7 +547,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     console.log('lxd test ovmCALL: value %s', _value);
     console.log('lxd test ovmCALL: calldata is follow');
     console.logBytes(_calldata);
-    console.log('lxd test ovmCALL: msg type %s', MessageType.ovmCALL);
+    console.log('lxd test ovmCALL: msg type %s', 0);
 
     // CALL updates the CALLER and ADDRESS.
     MessageContext memory nextMessageContext = messageContext;
@@ -1061,7 +1061,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
       ) = _decodeRevertData(returndata);
       //debug
       console.log(
-        'lxd test _handleExternalMessage contract: flag: %s,nuisanceGasLeftPostRevert: %s,ovmGasRefund %s',
+        'lxd test _handleExternalMessage contract:,nuisanceGasLeftPostRevert: %s,ovmGasRefund %s',
         flag,
         nuisanceGasLeftPostRevert,
         ovmGasRefund
@@ -1090,6 +1090,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
         flag == RevertFlag.STATIC_VIOLATION ||
         flag == RevertFlag.CREATOR_NOT_ALLOWED
       ) {
+          //debug
+          console.log("lxd test _handleExternalMessage contract: standard reverts");
         transactionRecord.ovmGasRefund = ovmGasRefund;
       }
 
@@ -1101,9 +1103,13 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
         flag == RevertFlag.INTENTIONAL_REVERT ||
         flag == RevertFlag.UNSAFE_BYTECODE
       ) {
+          //debug
+          console.log("lxd test _handleExternalMessage contract: INTENTIONAL_REVERT || UNSAFE_BYTECODE");
         returndata = returndataFromFlag;
       } else {
-        returndata = hex'';
+          //debug
+          console.log("lxd test _handleExternalMessage contract: other falg");
+      returndata = hex'';
       }
 
       // Reverts mean we need to use up whatever "nuisance gas" was used by the call.
