@@ -1062,7 +1062,6 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
       //debug
       console.log(
         'lxd test _handleExternalMessage contract:,nuisanceGasLeftPostRevert: %s,ovmGasRefund %s',
-        flag,
         nuisanceGasLeftPostRevert,
         ovmGasRefund
       );
