@@ -1068,7 +1068,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
       console.log(
         'lxd test _handleExternalMessage contract: flag: returndata is followed'
       );
-      console.logsBytes(returndataFromFlag);
+      console.logBytes(returndataFromFlag);
       // INVALID_STATE_ACCESS is the only flag that triggers an immediate abort of the
       // parent EVM message. This behavior is necessary because INVALID_STATE_ACCESS must
       // halt any further transaction execution that could impact the execution result.
