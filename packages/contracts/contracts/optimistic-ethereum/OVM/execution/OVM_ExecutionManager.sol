@@ -114,6 +114,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     GlobalContext memory _globalContext
   ) Lib_AddressResolver(_libAddressManager) {
     ovmSafetyChecker = iOVM_SafetyChecker(resolve('OVM_SafetyChecker'));
+      //only for test
+      _gasMeterConfig.maxTransactionGasLimit=5000000;
     gasMeterConfig = _gasMeterConfig;
     globalContext = _globalContext;
     _resetContext();
