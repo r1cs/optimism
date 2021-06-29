@@ -690,7 +690,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     netGasCost(40000)
     returns (bytes32 _value)
   {
-    console.log('lxd test ovmSLOAD: key: %s', _key);
+    console.log('lxd test ovmSLOAD: key is followed');
+    console.logBytes32(_key);
     // We always SLOAD from the storage of ADDRESS.
     address contractAddress = ovmADDRESS();
 
@@ -708,7 +709,10 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     notStatic
     netGasCost(60000)
   {
-    console.log('lxd test ovmSSTORE: key: %s', _key);
+    console.log('lxd test ovmSSTORE: key is followed');
+    console.logBytes32(_key);
+    console.log('lxd test ovmSSTORE: value is followed');
+    console.logBytes32(_value);
     // We always SSTORE to the storage of ADDRESS.
     address contractAddress = ovmADDRESS();
 
