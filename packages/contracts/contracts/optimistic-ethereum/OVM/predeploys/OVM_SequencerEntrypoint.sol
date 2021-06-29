@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.5.0 <0.8.0;
 pragma experimental ABIEncoderV2;
-import "hardhat/console.sol";
-
 
 /* Library Imports */
-import { Lib_EIP155Tx } from "../../libraries/codec/Lib_EIP155Tx.sol";
-import { Lib_ExecutionManagerWrapper } from "../../libraries/wrappers/Lib_ExecutionManagerWrapper.sol";
-import { iOVM_ECDSAContractAccount } from "../../iOVM/predeploys/iOVM_ECDSAContractAccount.sol";
+import {Lib_EIP155Tx} from '../../libraries/codec/Lib_EIP155Tx.sol';
+import {Lib_ExecutionManagerWrapper} from '../../libraries/wrappers/Lib_ExecutionManagerWrapper.sol';
+import {iOVM_ECDSAContractAccount} from '../../iOVM/predeploys/iOVM_ECDSAContractAccount.sol';
 
 /**
  * @title OVM_SequencerEntrypoint
@@ -18,80 +16,65 @@ import { iOVM_ECDSAContractAccount } from "../../iOVM/predeploys/iOVM_ECDSAContr
  * Runtime target: OVM
  */
 contract OVM_SequencerEntrypoint {
+  /*************
+   * Libraries *
+   *************/
 
-    /*************
-     * Libraries *
-     *************/
+  using Lib_EIP155Tx for Lib_EIP155Tx.EIP155Tx;
 
-    using Lib_EIP155Tx for Lib_EIP155Tx.EIP155Tx;
+  /*********************
+   * Fallback Function *
+   *********************/
 
+  /**
+   * Expects an RLP-encoded EIP155 transaction as input. See the EIP for a more detailed
+   * description of this transaction format:
+   * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
+   */
+  fallback() external {
+    // We use this twice, so it's more gas efficient to store a copy of it (barely).
+    bytes memory encodedTx = msg.data;
 
-    /*********************
-     * Fallback Function *
-     *********************/
+    // Decode the tx with the correct chain ID.
+    Lib_EIP155Tx.EIP155Tx memory transaction = Lib_EIP155Tx.decode(
+      encodedTx,
+      Lib_ExecutionManagerWrapper.ovmCHAINID()
+    );
 
-    /**
-     * Expects an RLP-encoded EIP155 transaction as input. See the EIP for a more detailed
-     * description of this transaction format:
-     * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
-     */
-    fallback()
-        external
-    {
-        // We use this twice, so it's more gas efficient to store a copy of it (barely).
-        bytes memory encodedTx = msg.data;
+    // Value is computed on the fly. Keep it in the stack to save some gas.
+    address target = transaction.sender();
 
-        // Decode the tx with the correct chain ID.
-        Lib_EIP155Tx.EIP155Tx memory transaction = Lib_EIP155Tx.decode(
-            encodedTx,
-            Lib_ExecutionManagerWrapper.ovmCHAINID()
-        );
-        //debug
-        console.log("lxd test: SequencerEntrypoint is touched");
-
-        // Value is computed on the fly. Keep it in the stack to save some gas.
-        address target = transaction.sender();
-        //debug
-        console.log("lxd test SequencerEntrypoint: target is %s",target);
-
-        bool isEmptyContract;
-        assembly {
-            isEmptyContract := iszero(extcodesize(target))
-        }
-        //debug
-        console.log("lxd test SequencerEntrypoint: isEmptyContract: %s",isEmptyContract);
-
-        // If the account is empty, deploy the default EOA to that address.
-        if (isEmptyContract) {
-            Lib_ExecutionManagerWrapper.ovmCREATEEOA(
-                transaction.hash(),
-                transaction.recoveryParam,
-                transaction.r,
-                transaction.s
-            );
-        }
-        //debug
-        console.log("lxd test SequencerEntrypoint: transaction to %s,value %s",transaction.to,transaction.value);
-        console.log("lxd test SequencerEntrypoint: transaction data follow");
-        console.logBytes(transaction.data);
-
-        // Forward the transaction over to the EOA.
-        (bool success, bytes memory returndata) = target.call(
-            abi.encodeWithSelector(iOVM_ECDSAContractAccount.execute.selector, transaction)
-        );
-        //debug
-        console.log("lxd test SequencerEntrypoint: success: %s",success);
-        console.log("lxd test SequencerEntrypoint: returndata follow");
-        console.logBytes(returndata);
-
-        if (success) {
-            assembly {
-                return(add(returndata, 0x20), mload(returndata))
-            }
-        } else {
-            assembly {
-                revert(add(returndata, 0x20), mload(returndata))
-            }
-        }
+    bool isEmptyContract;
+    assembly {
+      isEmptyContract := iszero(extcodesize(target))
     }
+
+    // If the account is empty, deploy the default EOA to that address.
+    if (isEmptyContract) {
+      Lib_ExecutionManagerWrapper.ovmCREATEEOA(
+        transaction.hash(),
+        transaction.recoveryParam,
+        transaction.r,
+        transaction.s
+      );
+    }
+
+    // Forward the transaction over to the EOA.
+    (bool success, bytes memory returndata) = target.call(
+      abi.encodeWithSelector(
+        iOVM_ECDSAContractAccount.execute.selector,
+        transaction
+      )
+    );
+
+    if (success) {
+      assembly {
+        return(add(returndata, 0x20), mload(returndata))
+      }
+    } else {
+      assembly {
+        revert(add(returndata, 0x20), mload(returndata))
+      }
+    }
+  }
 }
