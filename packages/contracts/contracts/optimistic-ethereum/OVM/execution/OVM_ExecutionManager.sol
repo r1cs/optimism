@@ -582,6 +582,13 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     fixedGasDiscount(80000)
     returns (bool _success, bytes memory _returndata)
   {
+    //debug
+    console.log('lxd test: ovmSTATICCALL is touched');
+    console.log('lxd test ovmSTATICCALL: gasLimit %s', _gasLimit);
+    console.log('lxd test ovmSTATICCALL: adderss %s', _address);
+    console.log('lxd test ovmSTATICCALL: calldata is follow');
+    console.logBytes(_calldata);
+
     // STATICCALL updates the CALLER, updates the ADDRESS, and runs in a static, valueless context.
     MessageContext memory nextMessageContext = messageContext;
     nextMessageContext.ovmCALLER = nextMessageContext.ovmADDRESS;
@@ -617,6 +624,14 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     fixedGasDiscount(40000)
     returns (bool _success, bytes memory _returndata)
   {
+    //debug
+    console.log(
+      'lxd test ovmDELEGATECALL: _gasLimit %s, _address %s, _calldata is followed',
+      _gasLimit,
+      _address
+    );
+    consolg.logBytes(_calldata);
+
     // DELEGATECALL does not change anything about the message context.
     MessageContext memory nextMessageContext = messageContext;
 
