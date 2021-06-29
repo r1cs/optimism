@@ -630,7 +630,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
       _gasLimit,
       _address
     );
-    consolg.logBytes(_calldata);
+    console.logBytes(_calldata);
 
     // DELEGATECALL does not change anything about the message context.
     MessageContext memory nextMessageContext = messageContext;
