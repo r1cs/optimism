@@ -7,20 +7,14 @@ import 'hardhat/console.sol';
 
 /* Library Imports */
 import {Lib_OVMCodec} from '../../libraries/codec/Lib_OVMCodec.sol';
-import {
-  Lib_AddressResolver
-} from '../../libraries/resolver/Lib_AddressResolver.sol';
+import {Lib_AddressResolver} from '../../libraries/resolver/Lib_AddressResolver.sol';
 import {Lib_Bytes32Utils} from '../../libraries/utils/Lib_Bytes32Utils.sol';
 import {Lib_EthUtils} from '../../libraries/utils/Lib_EthUtils.sol';
 import {Lib_ErrorUtils} from '../../libraries/utils/Lib_ErrorUtils.sol';
-import {
-  Lib_PredeployAddresses
-} from '../../libraries/constants/Lib_PredeployAddresses.sol';
+import {Lib_PredeployAddresses} from '../../libraries/constants/Lib_PredeployAddresses.sol';
 
 /* Interface Imports */
-import {
-  iOVM_ExecutionManager
-} from '../../iOVM/execution/iOVM_ExecutionManager.sol';
+import {iOVM_ExecutionManager} from '../../iOVM/execution/iOVM_ExecutionManager.sol';
 import {iOVM_StateManager} from '../../iOVM/execution/iOVM_StateManager.sol';
 import {iOVM_SafetyChecker} from '../../iOVM/execution/iOVM_SafetyChecker.sol';
 
@@ -114,8 +108,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     GlobalContext memory _globalContext
   ) Lib_AddressResolver(_libAddressManager) {
     ovmSafetyChecker = iOVM_SafetyChecker(resolve('OVM_SafetyChecker'));
-      //only for test
-      _gasMeterConfig.maxTransactionGasLimit=5000000;
+    //warning: only for test
+    _gasMeterConfig.maxTransactionGasLimit = 6000000;
     gasMeterConfig = _gasMeterConfig;
     globalContext = _globalContext;
     _resetContext();
@@ -230,13 +224,12 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     // uint256 gasProvided = gasleft();
 
     // Run the transaction, make sure to meter the gas usage.
-    (, bytes memory returndata) =
-      ovmCALL(
-        _transaction.gasLimit - gasMeterConfig.minTransactionGasLimit,
-        _transaction.entrypoint,
-        0,
-        _transaction.data
-      );
+    (, bytes memory returndata) = ovmCALL(
+      _transaction.gasLimit - gasMeterConfig.minTransactionGasLimit,
+      _transaction.entrypoint,
+      0,
+      _transaction.data
+    );
     //debug
     console.log('lxd test EM: ovmCALL finished,returndata follow');
     console.logBytes(returndata);
@@ -379,8 +372,10 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     _checkDeployerAllowed(creator);
 
     // Generate the correct CREATE address.
-    address contractAddress =
-      Lib_EthUtils.getAddressForCREATE(creator, _getAccountNonce(creator));
+    address contractAddress = Lib_EthUtils.getAddressForCREATE(
+      creator,
+      _getAccountNonce(creator)
+    );
 
     return _createContract(contractAddress, _bytecode, MessageType.ovmCREATE);
   }
@@ -407,8 +402,11 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     _checkDeployerAllowed(creator);
 
     // Generate the correct CREATE2 address.
-    address contractAddress =
-      Lib_EthUtils.getAddressForCREATE2(creator, _bytecode, _salt);
+    address contractAddress = Lib_EthUtils.getAddressForCREATE2(
+      creator,
+      _bytecode,
+      _salt
+    );
 
     return _createContract(contractAddress, _bytecode, MessageType.ovmCREATE2);
   }
@@ -493,17 +491,16 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     // CODECOPY     # copy everything after prefix into memory at pos 0
     // PUSH1 0x00
     // RETURN       # return the copied code
-    address proxyEOA =
-      Lib_EthUtils.createContract(
-        abi.encodePacked(
-          hex'600D380380600D6000396000f3',
-          ovmEXTCODECOPY(
-            Lib_PredeployAddresses.PROXY_EOA,
-            0,
-            ovmEXTCODESIZE(Lib_PredeployAddresses.PROXY_EOA)
-          )
+    address proxyEOA = Lib_EthUtils.createContract(
+      abi.encodePacked(
+        hex'600D380380600D6000396000f3',
+        ovmEXTCODECOPY(
+          Lib_PredeployAddresses.PROXY_EOA,
+          0,
+          ovmEXTCODESIZE(Lib_PredeployAddresses.PROXY_EOA)
         )
-      );
+      )
+    );
 
     // Reset the address now that we're done deploying.
     messageContext.ovmADDRESS = prevADDRESS;
@@ -750,16 +747,17 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     returns (uint256 _BALANCE)
   {
     // Easiest way to get the balance is query OVM_ETH as normal.
-    bytes memory balanceOfCalldata =
-      abi.encodeWithSignature('balanceOf(address)', _contract);
+    bytes memory balanceOfCalldata = abi.encodeWithSignature(
+      'balanceOf(address)',
+      _contract
+    );
 
     // Static call because this should be a read-only query.
-    (bool success, bytes memory returndata) =
-      ovmSTATICCALL(
-        gasleft(),
-        Lib_PredeployAddresses.OVM_ETH,
-        balanceOfCalldata
-      );
+    (bool success, bytes memory returndata) = ovmSTATICCALL(
+      gasleft(),
+      Lib_PredeployAddresses.OVM_ETH,
+      balanceOfCalldata
+    );
 
     // All balanceOf queries should successfully return a uint, otherwise this must be an OOG.
     if (!success || returndata.length != 32) {
@@ -802,15 +800,14 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
   function _checkDeployerAllowed(address _deployerAddress) internal {
     // From an OVM semantics perspective, this will appear identical to
     // the deployer ovmCALLing the whitelist.  This is fine--in a sense, we are forcing them to.
-    (bool success, bytes memory data) =
-      ovmSTATICCALL(
-        gasleft(),
-        Lib_PredeployAddresses.DEPLOYER_WHITELIST,
-        abi.encodeWithSelector(
-          OVM_DeployerWhitelist.isDeployerAllowed.selector,
-          _deployerAddress
-        )
-      );
+    (bool success, bytes memory data) = ovmSTATICCALL(
+      gasleft(),
+      Lib_PredeployAddresses.DEPLOYER_WHITELIST,
+      abi.encodeWithSelector(
+        OVM_DeployerWhitelist.isDeployerAllowed.selector,
+        _deployerAddress
+      )
+    );
     bool isAllowed = abi.decode(data, (bool));
 
     if (!isAllowed || !success) {
@@ -845,14 +842,13 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
 
     // Run the common logic which occurs between call-type and create-type messages,
     // passing in the creation bytecode and `true` to trigger create-specific logic.
-    (bool success, bytes memory data) =
-      _handleExternalMessage(
-        nextMessageContext,
-        gasleft(),
-        _contractAddress,
-        _bytecode,
-        _messageType
-      );
+    (bool success, bytes memory data) = _handleExternalMessage(
+      nextMessageContext,
+      gasleft(),
+      _contractAddress,
+      _bytecode,
+      _messageType
+    );
 
     // Yellow paper requires that address returned is zero if the contract deployment fails.
     return (success ? _contractAddress : address(0), data);
@@ -891,8 +887,9 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     console.log('lxd test _callContract: check contract passed');
 
     // Both 0x0000... and the EVM precompiles have the same address on L1 and L2 --> no trie lookup needed.
-    address codeContractAddress =
-      uint256(_contract) < 100 ? _contract : _getAccountEthAddress(_contract);
+    address codeContractAddress = uint256(_contract) < 100
+      ? _contract
+      : _getAccountEthAddress(_contract);
 
     //debug
     console.log(
@@ -967,8 +964,10 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
       );
       // Now transfer the value of the call.
       // The target is interpreted to be the next message's ovmADDRESS account.
-      bool transferredOvmEth =
-        _attemptForcedEthTransfer(_nextMessageContext.ovmADDRESS, messageValue);
+      bool transferredOvmEth = _attemptForcedEthTransfer(
+        _nextMessageContext.ovmADDRESS,
+        messageValue
+      );
 
       // If the ETH transfer fails (should only be possible in the case of insufficient balance), then treat this as a revert.
       // This mirrors EVM behavior, see https://github.com/ethereum/go-ethereum/blob/2dee31930c9977af2a9fcb518fb9838aa609a7cf/core/vm/evm.go#L298
@@ -1031,8 +1030,10 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     // So, we force it back, BEFORE returning the messageContext to the previous addresses.
     // This operation is part of the reason we "reserved the intrinsic gas" above.
     if (messageValue > 0 && _isValueType(_messageType) && !success) {
-      bool transferredOvmEth =
-        _attemptForcedEthTransfer(prevMessageContext.ovmADDRESS, messageValue);
+      bool transferredOvmEth = _attemptForcedEthTransfer(
+        prevMessageContext.ovmADDRESS,
+        messageValue
+      );
 
       // Since we transferred it in above and the call reverted, the transfer back should always pass.
       // This code path should NEVER be triggered since we sent `messageValue` worth of OVM_ETH into the target
@@ -1091,8 +1092,10 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
         flag == RevertFlag.STATIC_VIOLATION ||
         flag == RevertFlag.CREATOR_NOT_ALLOWED
       ) {
-          //debug
-          console.log("lxd test _handleExternalMessage contract: standard reverts");
+        //debug
+        console.log(
+          'lxd test _handleExternalMessage contract: standard reverts'
+        );
         transactionRecord.ovmGasRefund = ovmGasRefund;
       }
 
@@ -1104,13 +1107,15 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
         flag == RevertFlag.INTENTIONAL_REVERT ||
         flag == RevertFlag.UNSAFE_BYTECODE
       ) {
-          //debug
-          console.log("lxd test _handleExternalMessage contract: INTENTIONAL_REVERT || UNSAFE_BYTECODE");
+        //debug
+        console.log(
+          'lxd test _handleExternalMessage contract: INTENTIONAL_REVERT || UNSAFE_BYTECODE'
+        );
         returndata = returndataFromFlag;
       } else {
-          //debug
-          console.log("lxd test _handleExternalMessage contract: other falg");
-      returndata = hex'';
+        //debug
+        console.log('lxd test _handleExternalMessage contract: other falg');
+        returndata = hex'';
       }
 
       // Reverts mean we need to use up whatever "nuisance gas" was used by the call.
@@ -1218,14 +1223,21 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     internal
     returns (bool _success)
   {
-    bytes memory transferCalldata =
-      abi.encodeWithSignature('transfer(address,uint256)', _to, _value);
+    bytes memory transferCalldata = abi.encodeWithSignature(
+      'transfer(address,uint256)',
+      _to,
+      _value
+    );
 
     // OVM_ETH inherits from the UniswapV2ERC20 standard.  In this implementation, its return type
     // is a boolean.  However, the implementation always returns true if it does not revert.
     // Thus, success of the call frame is sufficient to infer success of the transfer itself.
-    (bool success, ) =
-      ovmCALL(gasleft(), Lib_PredeployAddresses.OVM_ETH, 0, transferCalldata);
+    (bool success, ) = ovmCALL(
+      gasleft(),
+      Lib_PredeployAddresses.OVM_ETH,
+      0,
+      transferCalldata
+    );
 
     return success;
   }
@@ -1375,8 +1387,9 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
 
     // Check whether the account has been loaded before and mark it as loaded if not. We need
     // this because "nuisance gas" only applies to the first time that an account is loaded.
-    bool _wasAccountAlreadyLoaded =
-      ovmStateManager.testAndSetAccountLoaded(_address);
+    bool _wasAccountAlreadyLoaded = ovmStateManager.testAndSetAccountLoaded(
+      _address
+    );
 
     // If we hadn't already loaded the account, then we'll need to charge "nuisance gas" based
     // on the size of the contract code.
@@ -1400,8 +1413,9 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
 
     // Check whether the account has been changed before and mark it as changed if not. We need
     // this because "nuisance gas" only applies to the first time that an account is changed.
-    bool _wasAccountAlreadyChanged =
-      ovmStateManager.testAndSetAccountChanged(_address);
+    bool _wasAccountAlreadyChanged = ovmStateManager.testAndSetAccountChanged(
+      _address
+    );
 
     // If we hadn't already loaded the account, then we'll need to charge "nuisance gas" based
     // on the size of the contract code.
@@ -1440,8 +1454,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
 
     // Check whether the slot has been loaded before and mark it as loaded if not. We need
     // this because "nuisance gas" only applies to the first time that a slot is loaded.
-    bool _wasContractStorageAlreadyLoaded =
-      ovmStateManager.testAndSetContractStorageLoaded(_contract, _key);
+    bool _wasContractStorageAlreadyLoaded = ovmStateManager
+    .testAndSetContractStorageLoaded(_contract, _key);
 
     // If we hadn't already loaded the account, then we'll need to charge some fixed amount of
     // "nuisance gas".
@@ -1465,8 +1479,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
 
     // Check whether the slot has been changed before and mark it as changed if not. We need
     // this because "nuisance gas" only applies to the first time that a slot is changed.
-    bool _wasContractStorageAlreadyChanged =
-      ovmStateManager.testAndSetContractStorageChanged(_contract, _key);
+    bool _wasContractStorageAlreadyChanged = ovmStateManager
+    .testAndSetContractStorageChanged(_contract, _key);
 
     // If we hadn't already changed the account, then we'll need to charge some fixed amount of
     // "nuisance gas".
@@ -1806,8 +1820,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     transactionContext.ovmGASLIMIT = DEFAULT_UINT256;
     transactionContext.ovmTXGASLIMIT = DEFAULT_UINT256;
     transactionContext.ovmL1QUEUEORIGIN = Lib_OVMCodec
-      .QueueOrigin
-      .SEQUENCER_QUEUE;
+    .QueueOrigin
+    .SEQUENCER_QUEUE;
 
     transactionRecord.ovmGasRefund = DEFAULT_UINT256;
 
@@ -1890,13 +1904,12 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
         return abi.encode(true, Lib_EthUtils.getCode(created));
       }
     } else {
-      (bool success, bytes memory returndata) =
-        ovmCALL(
-          _transaction.gasLimit,
-          _transaction.entrypoint,
-          _value,
-          _transaction.data
-        );
+      (bool success, bytes memory returndata) = ovmCALL(
+        _transaction.gasLimit,
+        _transaction.entrypoint,
+        _value,
+        _transaction.data
+      );
       return abi.encode(success, returndata);
     }
   }
