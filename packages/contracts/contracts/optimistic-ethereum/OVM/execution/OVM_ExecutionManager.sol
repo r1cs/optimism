@@ -254,6 +254,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _CALLER Address of the CALLER within the current message context.
    */
   function ovmCALLER() external view override returns (address _CALLER) {
+      console.log('lxd test ovmCALLER is %s',messageContext.ovmCALLER);
     return messageContext.ovmCALLER;
   }
 
@@ -262,6 +263,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _ADDRESS Active ADDRESS within the current message context.
    */
   function ovmADDRESS() public view override returns (address _ADDRESS) {
+    console.log('lxd test ovmADDRESS is %s',messageContext.ovmADDRESS);
     return messageContext.ovmADDRESS;
   }
 
@@ -270,6 +272,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _CALLVALUE Value sent along with the call according to the current message context.
    */
   function ovmCALLVALUE() public view override returns (uint256 _CALLVALUE) {
+    console.log('lxd test ovmCALLVALUE is %s',messageContext.ovmCALLVALUE);
     return messageContext.ovmCALLVALUE;
   }
 
@@ -278,6 +281,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _TIMESTAMP Value of the TIMESTAMP within the transaction context.
    */
   function ovmTIMESTAMP() external view override returns (uint256 _TIMESTAMP) {
+    console.log('lxd test ovmTIMESTAMP is %s',transactionContext.ovmTIMESTAMP);
     return transactionContext.ovmTIMESTAMP;
   }
 
@@ -286,6 +290,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _NUMBER Value of the NUMBER within the transaction context.
    */
   function ovmNUMBER() external view override returns (uint256 _NUMBER) {
+    console.log('lxd test ovmNUMBER is %s',transactionContext.ovmNUMBER);
     return transactionContext.ovmNUMBER;
   }
 
@@ -294,6 +299,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _GASLIMIT Value of the block's GASLIMIT within the transaction context.
    */
   function ovmGASLIMIT() external view override returns (uint256 _GASLIMIT) {
+    console.log('lxd test ovmGASLIMIT is %s',transactionContext.ovmGASLIMIT);
     return transactionContext.ovmGASLIMIT;
   }
 
@@ -302,6 +308,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _CHAINID Value of the chain's CHAINID within the global context.
    */
   function ovmCHAINID() external view override returns (uint256 _CHAINID) {
+    console.log('lxd test ovmCHAINID is %s',globalContext.ovmCHAINID);
     return globalContext.ovmCHAINID;
   }
 
@@ -364,6 +371,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     fixedGasDiscount(40000)
     returns (address, bytes memory)
   {
+      console.log('lxd test ovmCREATE is touched');
     // Creator is always the current ADDRESS.
     address creator = ovmADDRESS();
 
@@ -394,6 +402,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     fixedGasDiscount(40000)
     returns (address, bytes memory)
   {
+      console.log('lxd test ovmCREATE2 is touched');
     // Creator is always the current ADDRESS.
     address creator = ovmADDRESS();
 
@@ -420,6 +429,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _nonce Nonce of the current contract.
    */
   function ovmGETNONCE() external override returns (uint256 _nonce) {
+    console.log('lxd test ovmGETNONCE is touched');
     return _getAccountNonce(ovmADDRESS());
   }
 
@@ -427,6 +437,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * Bumps the nonce of the current ovmADDRESS by one.
    */
   function ovmINCREMENTNONCE() external override notStatic {
+
+    console.log('lxd test ovmINCREMENTNONCE is touched')
     address account = ovmADDRESS();
     uint256 nonce = _getAccountNonce(account);
 
@@ -453,6 +465,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     bytes32 _r,
     bytes32 _s
   ) public override notStatic {
+      //debug
+      console.log('lxd test ovmCREATEEOA is touched');
     // Recover the EOA address from the message hash and signature parameters. Since we do the
     // hashing in advance, we don't have handle different message hashing schemes. Even if this
     // function were to return the wrong address (rather than explicitly returning the zero
@@ -677,6 +691,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     netGasCost(40000)
     returns (bytes32 _value)
   {
+      console.log('lxd test ovmSLOAD: key: %s',_key);
     // We always SLOAD from the storage of ADDRESS.
     address contractAddress = ovmADDRESS();
 
@@ -694,6 +709,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     notStatic
     netGasCost(60000)
   {
+      console.log('lxd test ovmSSTORE: key: %s',_key);
     // We always SSTORE to the storage of ADDRESS.
     address contractAddress = ovmADDRESS();
 
@@ -761,6 +777,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     override
     returns (uint256 _BALANCE)
   {
+      console.log('lxd test ovmBALANCE: address: %s',_contract);
     // Easiest way to get the balance is query OVM_ETH as normal.
     bytes memory balanceOfCalldata = abi.encodeWithSignature(
       'balanceOf(address)',
@@ -788,6 +805,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _BALANCE OVM_ETH balance of the requesting contract.
    */
   function ovmSELFBALANCE() external override returns (uint256 _BALANCE) {
+    console.log('lxd test ovmSELFBALANCE is touched');
     return ovmBALANCE(ovmADDRESS());
   }
 
@@ -815,6 +833,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
   function _checkDeployerAllowed(address _deployerAddress) internal {
     // From an OVM semantics perspective, this will appear identical to
     // the deployer ovmCALLing the whitelist.  This is fine--in a sense, we are forcing them to.
+    console.log('lxd test _checkDeployerAllowed is touched: _deployerAddress %s',_deployerAddress);
     (bool success, bytes memory data) = ovmSTATICCALL(
       gasleft(),
       Lib_PredeployAddresses.DEPLOYER_WHITELIST,
@@ -846,6 +865,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
     bytes memory _bytecode,
     MessageType _messageType
   ) internal returns (address, bytes memory) {
+      console.log('lxd test _createContract: _contractAddress %s',_contractAddress);
     // We always update the nonce of the creating account, even if the creation fails.
     _setAccountNonce(ovmADDRESS(), _getAccountNonce(ovmADDRESS()) + 1);
 
@@ -1161,6 +1181,8 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @param _address OVM address being deployed to.
    */
   function safeCREATE(bytes memory _creationCode, address _address) external {
+      //debug
+      console.log('lxd test safeCREATE: address: %s',_address);
     // The only way this should callable is from within _createContract(),
     // and it should DEFINITELY not be callable by a non-EM code contract.
     if (msg.sender != address(this)) {
@@ -1267,6 +1289,7 @@ contract OVM_ExecutionManager is iOVM_ExecutionManager, Lib_AddressResolver {
    * @return _exists Whether or not the account exists.
    */
   function _hasAccount(address _address) internal returns (bool _exists) {
+
     _checkAccountLoad(_address);
     return ovmStateManager.hasAccount(_address);
   }
