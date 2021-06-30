@@ -33,6 +33,8 @@ var funcs = map[string]stateManagerFunction{
 	"commitPendingAccount":                     nativeFunctionVoid,
 }
 
+
+
 func callStateManager(input []byte, evm *EVM, contract *Contract) (ret []byte, err error) {
 	rawabi := evm.Context.OvmStateManager.ABI
 	abi := &rawabi
