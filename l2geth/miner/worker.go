@@ -733,6 +733,10 @@ func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Addres
 		w.current.state.RevertToSnapshot(snap)
 		return nil, err
 	}
+	if err := w.current.state.ForceCommitStateDiff();err != nil {
+	  w.current.state.RevertToSnapshot(snap)
+	  return nil ,err
+  }
 	w.current.txs = append(w.current.txs, tx)
 	w.current.receipts = append(w.current.receipts, receipt)
 
