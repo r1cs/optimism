@@ -240,6 +240,9 @@ type EVM struct {
   callGasTemp uint64
 
   Id string
+
+  //diffdb will get the same height as statedb.
+  Height *big.Int
 }
 
 type Recorder struct {
