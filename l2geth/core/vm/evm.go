@@ -21,6 +21,7 @@ import (
   "crypto/rand"
   "encoding/hex"
   "fmt"
+  "github.com/pkg/errors"
   "math/big"
   "strings"
   "sync/atomic"
@@ -240,61 +241,112 @@ type EVM struct {
   callGasTemp uint64
 
   Id string
+
+  //recoder hold recode module
+  *Recorder
 }
 
 type Recorder struct {
-  EVM
   valueCached   map[common.Hash]item
-  accountCached map[common.Address]bool
+  accountCached map[common.Address]item
 }
 
 type item struct {
-  exist   bool
-  hash    common.Hash
-  mutated bool
+  exist          bool
+  hash           common.Hash
+  mutated        bool
+  changeRecorded bool
 }
 
 const _recorderKeyLength = 20 + 32
 
 //recorde whether exist in state diff.
-func (r *Recorder) existAccount(address common.Address) bool {
-  return r.accountCached[address]
+func (e *EVM) existAccount(address common.Address) bool {
+  return e.accountCached[address].exist
 }
 
-func (r *Recorder) existKey(address common.Address, key common.Hash) bool {
+func (e *EVM) existKey(address common.Address, key common.Hash) bool {
   var clear [_recorderKeyLength]byte
   copy(clear[:20], address.Bytes())
   copy(clear[20:], key.Bytes())
-  return r.valueCached[crypto.Keccak256Hash(clear[:])].exist
+  return e.valueCached[crypto.Keccak256Hash(clear[:])].exist
 }
 
-//recode whether changed,if changed it will return true.
-func (r *Recorder) changed(address common.Address, key common.Hash, value interface{}) bool {
+//recode whether changeRecorded.
+func (e *EVM) changeRecorded(address common.Address, key common.Hash, value interface{}) bool {
   var clear [_recorderKeyLength]byte
   copy(clear[:20], address.Bytes())
   copy(clear[20:], key.Bytes())
-  return r.valueCached[crypto.Keccak256Hash(clear[:])].hash != toHash(value)
+  return e.valueCached[crypto.Keccak256Hash(clear[:])].changeRecorded
+}
+
+//check whether value is changed.
+func (e *EVM) muteted(address common.Address, key common.Hash, value interface{}) bool {
+  var clear [_recorderKeyLength]byte
+  copy(clear[:20], address.Bytes())
+  copy(clear[20:], key.Bytes())
+  return e.valueCached[crypto.Keccak256Hash(clear[:])].hash != toHash(value)
 }
 
 //record get account action.
-func (r *Recorder) getAccount(address common.Address) {
-  if !r.existAccount(address) {
-    err := r.StateDB.SetDiffAccount(r.Context.BlockNumber, address)
-    r.accountCached[address] = err == nil
+func (e *EVM) getAccount(address common.Address) error {
+  if e.existAccount(address) {
+    return nil
   }
+
+  err := e.StateDB.SetDiffAccount(e.Context.BlockNumber, address)
+  if err != nil {
+    return errors.Wrap(err, "recorder getAccount")
+  }
+  e.accountCached[address] = item{exist: true}
+  return nil
 }
 
-func (r *Recorder) getKey(address common.Address, key common.Hash) {
-  if !r.existKey(address,key){
-    err :=r.StateDB.SetDiffKey(r.Context.BlockNumber, address, key, false)
-    if err==nil {
-      var clear [_recorderKeyLength]byte
-      copy(clear[:20], address.Bytes())
-      copy(clear[20:], key.Bytes())
-      r.valueCached[crypto.Keccak256Hash(clear[:])]=item{exist: true,}
-    }
-
+func (e *EVM) setAccount(address common.Address)error {
+  if e.existAccount(address){
+    return nil
   }
+  err := e.StateDB.SetDiffAccount(e.Context.BlockNumber, address)
+  if err != nil {
+    return errors.Wrap(err, "recorder getAccount")
+  }
+  e.accountCached[address] = item{exist: true}
+  return nil
+}
+
+func (e *EVM) getKey(address common.Address, key common.Hash, value interface{}) error {
+  if e.existKey(address, key) {
+    return nil
+  }
+  err := e.StateDB.SetDiffKey(e.Context.BlockNumber, address, key, false)
+  if err != nil {
+    return errors.Wrap(err, "recoder getKet")
+  }
+
+  var clear [_recorderKeyLength]byte
+  copy(clear[:20], address.Bytes())
+  copy(clear[20:], key.Bytes())
+  e.valueCached[crypto.Keccak256Hash(clear[:])] = item{exist: true, hash: toHash(value), mutated: false, changeRecorded: false}
+  return nil
+}
+
+func (e *EVM) setKey(address common.Address, key common.Hash, value interface{}) error {
+  mutated := e.muteted(address, key, value)
+  if !mutated {
+    return nil
+  }
+  if e.changeRecorded(address, key, value) {
+    return nil
+  }
+  err := e.StateDB.SetDiffKey(e.Context.BlockNumber, address, key, mutated)
+  if err != nil {
+    return errors.Wrap(err, "recoder setKey")
+  }
+  var clear [_recorderKeyLength]byte
+  copy(clear[:20], address.Bytes())
+  copy(clear[20:], key.Bytes())
+  e.valueCached[crypto.Keccak256Hash(clear[:])] = item{exist: true, hash: toHash(value), mutated: mutated, changeRecorded: mutated}
+  return nil
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
@@ -323,6 +375,10 @@ func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmCon
     interpreters: make([]Interpreter, 0, 1),
 
     Id: hex.EncodeToString(id),
+    Recorder: &Recorder{
+      accountCached: make(map[common.Address]item),
+      valueCached: make(map[common.Hash]item),
+    },
   }
 
   if chainConfig.IsEWASM(ctx.BlockNumber) {
