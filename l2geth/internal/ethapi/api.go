@@ -626,6 +626,17 @@ func (s *PublicBlockChainAPI) GetStateDiffProof(ctx context.Context, blockNrOrHa
 	return stateDiffProof, state.Error()
 }
 
+func(s *PublicBlockChainAPI)OVMRunTx(ctx context.Context,blockNrOrHash rpc.BlockNumberOrHash,tx RPCTransaction)(*StateDiffProof,error){
+  state,header,err := s.b.StateAndHeaderByNumberOrHash(ctx,blockNrOrHash)
+  if state==nil || err != nil {
+    return nil,err
+  }
+
+  core.ApplyTransaction()
+
+
+}
+
 // GetProof returns the Merkle-proof for a given account and optionally some storage keys.
 func (s *PublicBlockChainAPI) GetProof(ctx context.Context, address common.Address, storageKeys []string, blockNrOrHash rpc.BlockNumberOrHash) (*AccountResult, error) {
 	state, _, err := s.b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
