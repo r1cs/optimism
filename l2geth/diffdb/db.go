@@ -2,7 +2,8 @@ package diffdb
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	_ "github.com/mattn/go-sqlite3"
+  "github.com/ethereum/go-ethereum/log"
+  _ "github.com/mattn/go-sqlite3"
 
 	"database/sql"
 	"math/big"
@@ -55,6 +56,7 @@ SELECT * from diffs WHERE block = $1
 
 /// Inserts a new row to the sqlite with the provided diff data.
 func (diff *DiffDb) SetDiffKey(block *big.Int, address common.Address, key common.Hash, mutated bool) error {
+  log.Info("set diff key")
 	// add 1 more insertion to the transaction
 	_, err := diff.stmt.Exec(block.Uint64(), address, key, mutated)
 	if err != nil {
@@ -82,7 +84,9 @@ func (diff *DiffDb) SetDiffAccount(block *big.Int, address common.Address) error
 
 /// Commits a pending diffdb transaction
 func (diff *DiffDb) ForceCommit() error {
+  log.Info("force commit diffdb")
 	if err := diff.tx.Commit(); err != nil {
+	  log.Error("commit diff: %s",err)
 		return err
 	}
 	return diff.resetTx()

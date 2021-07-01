@@ -39,7 +39,7 @@ func (gpo *RollupOracle) SetL1GasPrice(gasPrice *big.Int) error {
 	gpo.l1GasPriceLock.Lock()
 	defer gpo.l1GasPriceLock.Unlock()
 	gpo.l1GasPrice = gasPrice
-	log.Info("Set L1 Gas Price", "gasprice", gpo.l1GasPrice)
+	log.Debug("Set L1 Gas Price", "gasprice", gpo.l1GasPrice)
 	return nil
 }
 
@@ -56,6 +56,6 @@ func (gpo *RollupOracle) SetL2GasPrice(gasPrice *big.Int) error {
 	gpo.l2GasPriceLock.Lock()
 	defer gpo.l2GasPriceLock.Unlock()
 	gpo.l2GasPrice = gasPrice
-	log.Info("Set L2 Gas Price", "gasprice", gpo.l2GasPrice)
+	log.Debug("Set L2 Gas Price", "gasprice", gpo.l2GasPrice)
 	return nil
 }
