@@ -612,9 +612,9 @@ func (s *PublicBlockChainAPI) GetStateDiffProof(ctx context.Context, blockNrOrHa
     for i, key := range keys {
       keyStrings[i] = key.Key.String()
       //this key has changed,should get commit proof
-      if key.Mutated {
+      //if key.Mutated {
         changedKey = append(changedKey, key.Key.String())
-      }
+      //}
     }
 
     // get the proofs
