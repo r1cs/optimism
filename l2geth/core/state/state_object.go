@@ -289,10 +289,10 @@ func (s *stateObject) updateTrie(db Database) Trie {
 		}
 		s.originStorage[key] = value
 
-		if (value == common.Hash{}) {
-			s.setError(tr.TryDelete(key[:]))
-			continue
-		}
+		//if (value == common.Hash{}) {
+		//	s.setError(tr.TryDelete(key[:]))
+		//	continue
+		//}
 		// Encoding []byte cannot fail, ok to ignore the error.
 		v, _ := rlp.EncodeToBytes(common.TrimLeftZeroes(value[:]))
 		s.setError(tr.TryUpdate(key[:], v))
